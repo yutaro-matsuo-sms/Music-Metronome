@@ -2,6 +2,7 @@
   <v-container>
     <v-layout row wrap align-center>
       <v-flex xs12>
+        <!--メトロノームの振り子 -->
         <v-slider
           ref="pendurumSlider"
           :value="playState.now"
@@ -11,35 +12,39 @@
           color="primary"
         />
       </v-flex>
+      <!--text"Tempo"-->
       <v-flex xs12>
         <v-card flat color="transparent">
           <v-card-title>Tempo</v-card-title>
           <v-card-text>
             <v-layout row wrap align-center>
+              <!--マイナスボタン-->
               <v-flex text-xs-right>
-                <v-btn fab small color="secondary" :disabled="isPlaying" @click="stepScaleMinus">
-                  <v-icon>minus</v-icon>
+                <v-btn fab small color="primary" :disabled="isPlaying" @click="stepScaleMinus">
+                  <v-icon>mdi-minus</v-icon>
                 </v-btn>
               </v-flex>
+              <!--プラスボタン-->
               <v-flex text-xs-center headline grey--text text--darken-2>{{ playCondition.scale }}</v-flex>
               <v-flex text-xs-left>
-                <v-btn fab small color="secondary" :disabled="isPlaying" @click="stepScalePlus">
-                  <v-icon>add</v-icon>
+                <v-btn fab small color="primary" :disabled="isPlaying" @click="stepScalePlus">
+                  <v-icon>mdi-plus</v-icon>
                 </v-btn>
               </v-flex>
             </v-layout>
           </v-card-text>
         </v-card>
       </v-flex>
+      <!--再生ボタン-->
       <v-flex xs12 text-xs-center>
         <template v-if="!isPlaying">
           <v-btn dark color="primary" @click.prevent="startPlay">
-            <v-icon>music_note</v-icon>
+            <v-icon>mdi-music-note</v-icon>
           </v-btn>
         </template>
         <template v-else>
           <v-btn dark color="accent" @click.prevent="stopPlay">
-            <v-icon>music_off</v-icon>
+            <v-icon>mdi-music-note-off</v-icon>
           </v-btn>
         </template>
       </v-flex>
@@ -49,7 +54,7 @@
 
 <script>
 import { Howl } from "howler";
-
+//BPMの振り幅
 const scaleRange = {
   min: 40,
   max: 208
