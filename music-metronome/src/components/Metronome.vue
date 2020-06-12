@@ -15,7 +15,7 @@
       <!--text"Tempo"-->
       <v-flex xs12>
         <v-card flat color="transparent">
-          <v-card-title>Tempo</v-card-title>
+          <v-card-title>BPM</v-card-title>
           <v-card-text>
             <v-layout row wrap align-center>
               <!--マイナスボタン-->

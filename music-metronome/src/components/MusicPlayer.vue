@@ -7,30 +7,62 @@
         </v-card>
         <v-card-text>{{songs[songIndex].name}}</v-card-text>
         <v-card-text>{{songs[songIndex].artist}}</v-card-text>
+      </v-flex>
+    </v-layout>
+    <v-layout row wrap align-center justify-center>
+      <v-flex text-md-right>
         <v-card-text>{{toCurrentMs}} / {{toDurationMs}}</v-card-text>
-        <v-slider
-          v-model="currentTime"
-          :label="toCurrentMs"
-          :value="currentTime"
-          :min="0"
-          :max="duration"
-          color="primary"
-        />
-        <v-icon dark color="primary" @click.prevent="prev">mdi-rewind</v-icon>
+        <v-slider v-model="currentTime" @end="changeSeek" :min="0" :max="duration" color="primary" />
+      </v-flex>
+    </v-layout>
+    <v-layout row wrap align-center>
+      <v-flex text-md-right>
+        <v-icon x-large dark color="primary" @click.prevent="prev">mdi-rewind</v-icon>
+      </v-flex>
+      <v-flex text-md-center>
         <template v-if="!isPlay">
-          <v-icon dark color="primary" @click.prevent="play">mdi-play</v-icon>
+          <v-icon x-large dark color="primary" @click.prevent="play">mdi-play</v-icon>
         </template>
         <template v-else>
-          <v-icon dark color="primary" @click.prevent="pause">mdi-pause</v-icon>
+          <v-icon x-large dark color="primary" @click.prevent="pause">mdi-pause</v-icon>
         </template>
-        <v-icon dark color="primary" @click.prevent="next">mdi-fast-forward</v-icon>
       </v-flex>
+      <v-flex text-md-left>
+        <v-icon x-large dark color="primary" @click.prevent="next">mdi-fast-forward</v-icon>
+      </v-flex>
+    </v-layout>
+    <v-layout row wrap align-center>
+      <v-flex text-xs-right>
+        <v-slider
+          v-model="audioVol"
+          append-icon="mdi-volume-high"
+          prepend-icon="mdi-volume-low"
+          :min="0"
+          :max="100"
+        />
+      </v-flex>
+    </v-layout>
+    <v-layout row wrap align-center>
+        <v-flex text-md-right>
+          <v-icon dark color="primary" @click.prevent="showPlayList">mdi-format-list-bulleted</v-icon>
+        </v-flex>
+        <v-flex text-md-center>
+          <template v-if="!songs[songIndex].isFav">
+            <v-icon dark color="primary" @click.prevent="changeFavorite">mdi-heart-outline</v-icon>
+          </template>
+          <template v-else>
+            <v-icon dark color="primary" @click.prevent="changeFavorite">mdi-heart</v-icon>
+          </template>
+        </v-flex>
+        <v-flex text-md-left>
+          <v-icon dark color="primary" @click.prevent="addPlayList">mdi-playlist-plus</v-icon>
+        </v-flex>
     </v-layout>
   </v-container>
 </template>
 
 <script>
-import { Howl } from "howler";
+import { Howl, Howler } from "howler";
 export default {
   name: "MusicPlayer",
   compornents: {},
@@ -42,14 +74,16 @@ export default {
           name: "流星 -demo-",
           artist: "Unknown",
           img: require("@/assets/jackets/IMG_5105.jpg"),
-          song: require("@/assets/songs/流星 -demo-.mp3")
+          song: require("@/assets/songs/流星 -demo-.mp3"),
+          isFav: false
         },
         {
           id: 2,
           name: "1118",
           artist: "Unknown",
           img: require("@/assets/jackets/IMG_3101_Original.jpg"),
-          song: require("@/assets/songs/1118.mp3")
+          song: require("@/assets/songs/1118.mp3"),
+          isFav: false
         }
       ],
       audio: {
@@ -59,13 +93,14 @@ export default {
       duration: 0,
       currentTime: 0,
       timer: null,
-      songIndex: 0
+      songIndex: 0,
+      audioVol: 100
     };
   },
   mounted: function() {
     this.audio.song = new Howl({
-      loop: true,
-      src: this.songs[this.songIndex].song
+      src: this.songs[this.songIndex].song,
+      volume: this.toVol
     });
     this.audio.song.on("load", () => {
       this.duration = this.audio.song.duration();
@@ -87,20 +122,26 @@ export default {
     this.audio.song.on("end", () => {
       clearInterval(this.timer);
       this.currentTime = 0;
-      this.getSongIndex;
-      this.isPlay = false;
+      this.songIndex += 1;
+      this.audio.song = new Howl({
+        src: this.songs[this.songIndex].song,
+        volume: this.toVol,
+        onload: () => {
+          this.duration = Howler.duration();
+        }
+      });
+      this.play();
+      this.isPlay = true;
     });
   },
   methods: {
-    playSilent(audio) {
-      audio.mute(true);
-      audio.play();
-    },
-    prepareAudio() {
-      this.playSilent(this.audio.song);
+    playChangeSeek(seek) {
+      this.audio.song.seek(seek).mute(false);
+      if (this.isPlay) {
+        this.audio.song.play();
+      }
     },
     playAudio(audio) {
-      //audio.seek(this.currentTime);
       audio.mute(false);
       audio.play();
     },
@@ -120,11 +161,11 @@ export default {
         this.songIndex = this.songs.length - 1;
       }
       this.audio.song = new Howl({
-        loop: true,
-        src: this.songs[this.songIndex].song
+        src: this.songs[this.songIndex].song,
+        volume: this.toVol
       });
       if (this.isPlay) {
-        this.play();
+        this.audio.song.play();
       }
     },
     next() {
@@ -134,12 +175,23 @@ export default {
         this.songIndex = 0;
       }
       this.audio.song = new Howl({
-        loop: true,
-        src: this.songs[this.songIndex].song
+        src: this.songs[this.songIndex].song,
+        volume: this.toVol
+      });
+      this.audio.song.on("load", () => {
+        this.duration = this.audio.song.duration();
       });
       if (this.isPlay) {
-        this.play();
+        this.audio.song.play();
       }
+    },
+    changeSeek(seek) {
+      this.audio.song.stop();
+      this.playChangeSeek(seek);
+    },
+    changeFavorite() {
+      console.log(this.songs[this.songIndex].isFav);
+      return this.songs[this.songIndex].isFav = !this.songs[this.songIndex].isFav
     },
     padZero(v) {
       if (v < 10) {
@@ -154,13 +206,19 @@ export default {
   },
   computed: {
     toCurrentMs() {
-      const minutes = ((this.currentTime % 3600) / 60) | 0;
+      let minutes = ((this.currentTime % 3600) / 60) | 0;
       const second = this.padZero(this.currentTime % 60);
+      if (second === "60") {
+        return parseInt(minutes) + 1 + ":" + "00";
+      }
       return minutes + ":" + second;
     },
     toDurationMs() {
-      const minutes = ((this.duration % 3600) / 60) | 0;
+      let minutes = ((this.duration % 3600) / 60) | 0;
       const second = this.padZero(this.duration % 60);
+      if (second === 60) {
+        return parseInt(minutes) + 1 + ":" + "00";
+      }
       return minutes + ":" + second;
     },
     getSongIndex() {
@@ -168,6 +226,14 @@ export default {
         return this.songIndex - this.songIndex;
       }
       return this.songIndex + 1;
+    },
+    toVol() {
+      return this.audioVol / 100;
+    }
+  },
+  watch: {
+    audioVol: function(vol) {
+      Howler.volume(vol / 100);
     }
   }
 };
