@@ -43,20 +43,37 @@
       </v-flex>
     </v-layout>
     <v-layout row wrap align-center>
-        <v-flex text-md-right>
-          <v-icon dark color="primary" @click.prevent="showPlayList">mdi-format-list-bulleted</v-icon>
-        </v-flex>
-        <v-flex text-md-center>
-          <template v-if="!songs[songIndex].isFav">
-            <v-icon dark color="primary" @click.prevent="changeFavorite">mdi-heart-outline</v-icon>
-          </template>
-          <template v-else>
-            <v-icon dark color="primary" @click.prevent="changeFavorite">mdi-heart</v-icon>
-          </template>
-        </v-flex>
-        <v-flex text-md-left>
-          <v-icon dark color="primary" @click.prevent="addPlayList">mdi-playlist-plus</v-icon>
-        </v-flex>
+      <v-flex text-md-right>
+        <v-icon dark color="primary" @click.prevent="showPlayList">mdi-format-list-bulleted</v-icon>
+      </v-flex>
+      <v-flex text-md-center>
+        <template v-if="!songs[songIndex].isFav">
+          <v-icon dark color="primary" @click.prevent="changeFavorite">mdi-heart-outline</v-icon>
+        </template>
+        <template v-else>
+          <v-icon dark color="primary" @click.prevent="changeFavorite">mdi-heart</v-icon>
+        </template>
+      </v-flex>
+      <v-flex text-md-left>
+        <v-icon dark color="primary" @click.prevent="addPlayList">mdi-playlist-plus</v-icon>
+      </v-flex>
+    </v-layout>
+    <v-layout low, wrap>
+      <v-flex xs12>
+        <template v-if="onPlayList">
+          <v-card class="mx-auto" max-width="320">
+            <v-list disabled>
+              <v-list-item-group dark v-model="songs">
+                <v-list-item v-for="(song, i) in songs" :key="i">
+                  <v-list-item-content>
+                    <v-list-item-titl v-text="song.name"></v-list-item-titl>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list-item-group>
+            </v-list>
+          </v-card>
+        </template>
+      </v-flex>
     </v-layout>
   </v-container>
 </template>
@@ -94,7 +111,8 @@ export default {
       currentTime: 0,
       timer: null,
       songIndex: 0,
-      audioVol: 100
+      audioVol: 100,
+      onPlayList: false
     };
   },
   mounted: function() {
@@ -125,16 +143,19 @@ export default {
       this.songIndex += 1;
       this.audio.song = new Howl({
         src: this.songs[this.songIndex].song,
-        volume: this.toVol,
-        onload: () => {
-          this.duration = Howler.duration();
-        }
+        volume: this.toVol
+      });
+      this.audio.song.once("load", () => {
+        this.duration = this.audi.song.duration();
       });
       this.play();
       this.isPlay = true;
     });
   },
   methods: {
+    showPlayList() {
+      return (this.onPlayList = !this.onPlayList);
+    },
     playChangeSeek(seek) {
       this.audio.song.seek(seek).mute(false);
       if (this.isPlay) {
@@ -146,7 +167,6 @@ export default {
       audio.play();
     },
     play() {
-      //this.prepareAudio();
       this.playAudio(this.audio.song);
       this.isPlay = true;
     },
@@ -164,6 +184,9 @@ export default {
         src: this.songs[this.songIndex].song,
         volume: this.toVol
       });
+      this.audio.song.once("load", () => {
+        this.duration = this.audi.song.duration();
+      });
       if (this.isPlay) {
         this.audio.song.play();
       }
@@ -178,9 +201,10 @@ export default {
         src: this.songs[this.songIndex].song,
         volume: this.toVol
       });
-      this.audio.song.on("load", () => {
-        this.duration = this.audio.song.duration();
+      this.audio.song.once("load", () => {
+        this.duration = this.audi.song.duration();
       });
+
       if (this.isPlay) {
         this.audio.song.play();
       }
@@ -190,8 +214,8 @@ export default {
       this.playChangeSeek(seek);
     },
     changeFavorite() {
-      console.log(this.songs[this.songIndex].isFav);
-      return this.songs[this.songIndex].isFav = !this.songs[this.songIndex].isFav
+      return (this.songs[this.songIndex].isFav = !this.songs[this.songIndex]
+        .isFav);
     },
     padZero(v) {
       if (v < 10) {
